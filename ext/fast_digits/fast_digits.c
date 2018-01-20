@@ -1,5 +1,4 @@
 #include <ruby.h>
-#include <ruby/intern.h>
 
 static ID id_divmod, id_lt, id_mult, id_plus;
 
