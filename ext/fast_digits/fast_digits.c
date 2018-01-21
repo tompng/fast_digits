@@ -5,12 +5,6 @@ static ID id_divmod, id_lt, id_mult, id_plus, id_bit_length;
 static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
   VALUE base = LONG2FIX(10);
   if (argc == 1) base = rb_to_int(argv[0]);
-  VALUE bases = rb_ary_new();
-  VALUE b = base;
-  while (rb_funcall(b, id_lt, 1, self)) {
-    rb_ary_push(bases, b);
-    b = rb_funcall(b, id_mult, 1, b);
-  }
   if (FIX2LONG(rb_funcall(self, id_bit_length, 0)) < 50 * FIX2LONG(rb_funcall(base, id_bit_length, 0))) {
     VALUE digits = rb_ary_new();
     VALUE num = self;
@@ -21,9 +15,13 @@ static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
     }
     return digits;
   }
+  VALUE bases = rb_ary_new();
+  for (VALUE b = base; rb_funcall(b, id_lt, 1, self); b = rb_funcall(b, id_mult, 1, b)) {
+    rb_ary_push(bases, b);
+  }
   VALUE digits = rb_ary_new_from_args(1, self);
-  for(int level=RARRAY_LEN(bases)-1; level>=0; level--) {
-    VALUE b = RARRAY_AREF(bases, level);
+  while (RARRAY_LEN(bases)) {
+    VALUE b = rb_ary_pop(bases);
     int lastindex = RARRAY_LEN(digits) - 1;
     for(int i = lastindex; i >= 0; i--) {
       VALUE n = RARRAY_AREF(digits, i);
