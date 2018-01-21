@@ -54,6 +54,7 @@ static VALUE rb_from_digits(VALUE klass, VALUE arg) {
       VALUE v = div == Qnil ? mod : rb_funcall(rb_funcall(div, id_mult, 1, b), id_plus, 1, mod);
       RARRAY_ASET(array, i, v);
     }
+    if (n < size) RARRAY_ASET(array, n, Qnil);
   }
   return RARRAY_AREF(array, 0);
 }
