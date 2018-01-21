@@ -22,24 +22,17 @@ static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
     return digits;
   }
   VALUE digits = rb_ary_new_from_args(1, self);
-  for(int idx=RARRAY_LEN(bases)-1; idx>=0; idx--) {
-    VALUE b = RARRAY_AREF(bases, idx);
-    int pos = RARRAY_LEN(digits) - 1;
-    VALUE n = RARRAY_AREF(digits, pos);
-    VALUE divmod = rb_funcall(n, id_divmod, 1, b);
-    VALUE div = RARRAY_AREF(divmod, 0);
-    VALUE mod = RARRAY_AREF(divmod, 1);
-    if (n != self && n != mod && !FIXNUM_P(n)) rb_big_resize(n, 0);
-    if (div != LONG2FIX(0)) rb_ary_store(digits, 2 * pos + 1,  div);
-    rb_ary_store(digits, 2 * pos,  RARRAY_AREF(divmod, 1));
-    while(--pos >= 0) {
-      n = RARRAY_AREF(digits, pos);
-      divmod = rb_funcall(n, id_divmod, 1, b);
-      div = RARRAY_AREF(divmod, 0);
-      mod = RARRAY_AREF(divmod, 1);
-      if (!FIXNUM_P(n) && n != mod) rb_big_resize(n, 0);
-      rb_ary_store(digits, 2 * pos + 1, div);
-      rb_ary_store(digits, 2 * pos, mod);
+  for(int level=RARRAY_LEN(bases)-1; level>=0; level--) {
+    VALUE b = RARRAY_AREF(bases, level);
+    int lastindex = RARRAY_LEN(digits) - 1;
+    for(int i = lastindex; i >= 0; i--) {
+      VALUE n = RARRAY_AREF(digits, i);
+      VALUE divmod = rb_funcall(n, id_divmod, 1, b);
+      VALUE div = RARRAY_AREF(divmod, 0);
+      VALUE mod = RARRAY_AREF(divmod, 1);
+      if (!FIXNUM_P(n) && n != mod && n != self) rb_big_resize(n, 0);
+      if (i != lastindex || div != LONG2FIX(0)) rb_ary_store(digits, 2 * i + 1,  div);
+      rb_ary_store(digits, 2 * i, mod);
     }
   }
   return digits;
