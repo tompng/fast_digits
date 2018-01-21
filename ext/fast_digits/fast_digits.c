@@ -36,10 +36,11 @@ static int bit_length(int n) {
   return 32;
 }
 
-static VALUE rb_restore_digits(int argc, VALUE *argv, VALUE self) {
+static VALUE rb_from_digits(VALUE klass, VALUE arg) {
+  VALUE digits = rb_ary_entry(arg, 0);
   VALUE base = LONG2FIX(10);
-  if (argc == 1) base = rb_to_int(argv[0]);
-  VALUE array = rb_ary_dup(self);
+  if (RARRAY_LEN(arg) == 2) base = rb_to_int(rb_ary_entry(arg, 1));
+  VALUE array = rb_ary_dup(digits);
   int size = RARRAY_LEN(array);
   int levels = bit_length(size);
   VALUE b = base;
@@ -52,8 +53,6 @@ static VALUE rb_restore_digits(int argc, VALUE *argv, VALUE self) {
       VALUE div = rb_ary_entry(array, 2 * i + 1);
       VALUE v = div == Qnil ? mod : rb_funcall(rb_funcall(div, id_mult, 1, b), id_plus, 1, mod);
       RARRAY_ASET(array, i, v);
-      if (i) RARRAY_ASET(array, 2 * i, Qnil);
-      if (2 * i + 1 < size) RARRAY_ASET(array, 2 * i + 1, Qnil);
     }
   }
   return RARRAY_AREF(array, 0);
@@ -67,5 +66,5 @@ void Init_fast_digits(void){
 
   rb_define_alias(rb_cInteger,  "original_digits", "digits");
   rb_define_method(rb_cInteger,  "digits", rb_fast_digits, -1);
-  rb_define_method(rb_cArray, "revert_digits", rb_restore_digits, -1);
+  rb_define_singleton_method(rb_cInteger, "from_digits", rb_from_digits, -2);
 }
