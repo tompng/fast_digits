@@ -1,6 +1,6 @@
 #include <ruby.h>
 
-static ID id_divmod, id_lt, id_mult, id_plus;
+static ID id_divmod, id_lt, id_mult, id_plus, id_bit_length;
 
 static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
   VALUE base = LONG2FIX(10);
@@ -10,6 +10,16 @@ static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
   while (rb_funcall(b, id_lt, 1, self)) {
     rb_ary_push(bases, b);
     b = rb_funcall(b, id_mult, 1, b);
+  }
+  if (FIX2LONG(rb_funcall(self, id_bit_length, 0)) < 50 * FIX2LONG(rb_funcall(base, id_bit_length, 0))) {
+    VALUE digits = rb_ary_new();
+    VALUE num = self;
+    while (!FIXNUM_P(num) || FIX2LONG(num) > 0) {
+      VALUE divmod = rb_funcall(num, id_divmod, 1, base);
+      rb_ary_push(digits, RARRAY_AREF(divmod, 1));
+      num = RARRAY_AREF(divmod, 0);
+    }
+    return digits;
   }
   VALUE digits = rb_ary_new_from_args(1, self);
   for(int idx=RARRAY_LEN(bases)-1; idx>=0; idx--) {
@@ -77,6 +87,7 @@ void Init_fast_digits(void){
   id_lt = rb_intern("<");
   id_mult = rb_intern("*");
   id_plus = rb_intern("+");
+  id_bit_length = rb_intern("bit_length");
 
   rb_define_alias(rb_cInteger,  "original_digits", "digits");
   rb_define_method(rb_cInteger,  "digits", rb_fast_digits, -1);
