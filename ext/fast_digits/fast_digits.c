@@ -13,18 +13,16 @@ static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
   }
   VALUE digits = rb_ary_new_from_args(1, self);
   for(int idx=RARRAY_LEN(bases)-1; idx>=0; idx--) {
-    int stride = 1 << idx;
     VALUE b = RARRAY_AREF(bases, idx);
     int pos = RARRAY_LEN(digits) - 1;
     VALUE dm = rb_funcall(RARRAY_AREF(digits, pos), id_divmod, 1, b);
     VALUE d = RARRAY_AREF(dm, 0);
-    if (d != LONG2FIX(0)) rb_ary_store(digits, pos + stride,  d);
-    rb_ary_store(digits, pos,  RARRAY_AREF(dm, 1));
-    while(pos > 0) {
-      pos -= 2 * stride;
+    if (d != LONG2FIX(0)) rb_ary_store(digits, 2 * pos + 1,  d);
+    rb_ary_store(digits, 2 * pos,  RARRAY_AREF(dm, 1));
+    while(--pos >= 0) {
       dm = rb_funcall(RARRAY_AREF(digits, pos), id_divmod, 1, b);
-      rb_ary_store(digits, pos + stride, RARRAY_AREF(dm, 0));
-      rb_ary_store(digits, pos, RARRAY_AREF(dm, 1));
+      rb_ary_store(digits, 2 * pos + 1, RARRAY_AREF(dm, 0));
+      rb_ary_store(digits, 2 * pos, RARRAY_AREF(dm, 1));
     }
   }
   return digits;
