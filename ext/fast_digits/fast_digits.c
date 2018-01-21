@@ -30,7 +30,6 @@ static VALUE rb_fast_digits(int argc, VALUE *argv, VALUE self) {
       VALUE divmod = rb_funcall(n, id_divmod, 1, b);
       VALUE div = RARRAY_AREF(divmod, 0);
       VALUE mod = RARRAY_AREF(divmod, 1);
-      if (!FIXNUM_P(n) && n != mod && n != self) rb_big_resize(n, 0);
       if (i != lastindex || div != LONG2FIX(0)) rb_ary_store(digits, 2 * i + 1,  div);
       rb_ary_store(digits, 2 * i, mod);
     }
@@ -59,18 +58,20 @@ static VALUE rb_from_digits(VALUE klass, VALUE arg) {
     int stride = 2 << level;
     int n = (size + stride - 1) / stride;
     for (int i=0; i<n; i++) {
+      VALUE div = LONG2FIX(0);
       VALUE mod = rb_to_int(RARRAY_AREF(array, 2 * i));
-      VALUE div = rb_ary_entry(array, 2 * i + 1);
-      if (div == Qnil || div == LONG2FIX(0)) {
+      RARRAY_ASET(array, 2 * i, LONG2FIX(0));
+      if (2 * i + 1 < size) {
+        div = rb_to_int(RARRAY_AREF(array, 2 * i + 1));
+        RARRAY_ASET(array, 2 * i + 1, LONG2FIX(0));
+      }
+      if (div == LONG2FIX(0)) {
         RARRAY_ASET(array, i, mod);
       } else {
         div = rb_to_int(div);
         RARRAY_ASET(array, i, rb_funcall(rb_funcall(div, id_mult, 1, b), id_plus, 1, mod));
-        if (!FIXNUM_P(mod)) rb_big_resize(mod, 0);
-        if (!FIXNUM_P(div)) rb_big_resize(div, 0);
       }
     }
-    if (n < size) RARRAY_ASET(array, n, Qnil);
   }
   return RARRAY_AREF(array, 0);
 }
